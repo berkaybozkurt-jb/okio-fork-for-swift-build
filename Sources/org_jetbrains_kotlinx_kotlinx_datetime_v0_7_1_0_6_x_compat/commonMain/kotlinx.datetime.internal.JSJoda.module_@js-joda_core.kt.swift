@@ -1,0 +1,1 @@
+../../../.vendor-cache/org.jetbrains.kotlinx.kotlinx-datetime/0.7.1-0.6.x-compat/commonJsMain/kotlinx.datetime.internal.JSJoda.module_@js-joda_core.kt
