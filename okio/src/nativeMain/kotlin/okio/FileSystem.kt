@@ -59,6 +59,7 @@ actual abstract class FileSystem : Closeable {
   actual abstract fun source(file: Path): Source
 
   @Throws(IOException::class)
+  @OptIn(kotlin.contracts.ExperimentalContracts::class)
   actual inline fun <T> read(file: Path, readerAction: BufferedSource.() -> T): T {
     contract {
       callsInPlace(readerAction, InvocationKind.EXACTLY_ONCE)
@@ -73,6 +74,7 @@ actual abstract class FileSystem : Closeable {
   actual abstract fun sink(file: Path, mustCreate: Boolean): Sink
 
   @Throws(IOException::class)
+  @OptIn(kotlin.contracts.ExperimentalContracts::class)
   actual inline fun <T> write(
     file: Path,
     mustCreate: Boolean,

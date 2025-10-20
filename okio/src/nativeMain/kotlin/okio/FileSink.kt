@@ -25,6 +25,7 @@ import platform.posix.fclose
 import platform.posix.fflush
 
 /** Writes bytes to a file as a sink. */
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 internal class FileSink(
   private val file: CPointer<FILE>,
 ) : Sink {

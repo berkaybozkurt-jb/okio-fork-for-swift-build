@@ -26,6 +26,7 @@ import platform.posix.feof
 import platform.posix.ferror
 
 /** Reads the bytes of a file as a source. */
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 internal class FileSource(
   private val file: CPointer<FILE>,
 ) : Source {

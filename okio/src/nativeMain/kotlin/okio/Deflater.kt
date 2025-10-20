@@ -47,6 +47,7 @@ import platform.zlib.z_stream_s
  *
  * See also, the [zlib manual](https://www.zlib.net/manual.html).
  */
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 actual class Deflater actual constructor(
   level: Int,
   nowrap: Boolean,

@@ -50,6 +50,7 @@ private class BlackholeSink : Sink {
 }
 
 /** Execute [block] then close this. This will be closed even if [block] throws. */
+@OptIn(kotlin.contracts.ExperimentalContracts::class)
 inline fun <T : Closeable?, R> T.use(block: (T) -> R): R {
   contract {
     callsInPlace(block, InvocationKind.EXACTLY_ONCE)

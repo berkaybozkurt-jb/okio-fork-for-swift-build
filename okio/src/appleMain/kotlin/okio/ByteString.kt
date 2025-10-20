@@ -192,7 +192,7 @@ internal actual constructor(
 
     actual fun String.decodeHex() = commonDecodeHex()
 
-    @OptIn(UnsafeNumber::class, ExperimentalNativeApi::class)
+    @OptIn(UnsafeNumber::class, ExperimentalNativeApi::class, kotlinx.cinterop.ExperimentalForeignApi::class)
     @CName("of")
     fun NSData.toByteString(): ByteString {
       val data = this

@@ -27,6 +27,7 @@ import platform.posix.opendir
 import platform.posix.readdir
 import platform.posix.set_posix_errno
 
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 internal object PosixFileSystem : FileSystem() {
   private val SELF_DIRECTORY_ENTRY = ".".toPath()
   private val PARENT_DIRECTORY_ENTRY = "..".toPath()

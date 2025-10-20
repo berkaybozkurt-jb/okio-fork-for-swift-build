@@ -36,6 +36,7 @@ import platform.zlib.z_stream_s
 /**
  * Inflate using Kotlin/Native's built-in zlib bindings.
  */
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 actual class Inflater actual constructor(
   nowrap: Boolean,
 ) {

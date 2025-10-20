@@ -39,6 +39,7 @@ actual class Lock {
 
 internal actual fun newLock(): Lock = Lock.instance
 
+@OptIn(kotlin.contracts.ExperimentalContracts::class)
 actual inline fun <T> Lock.withLock(action: () -> T): T {
   contract {
     callsInPlace(action, InvocationKind.EXACTLY_ONCE)

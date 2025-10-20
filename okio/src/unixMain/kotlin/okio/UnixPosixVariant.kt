@@ -52,6 +52,7 @@ import platform.posix.stat
 import platform.posix.symlink
 import platform.posix.timespec
 
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 internal actual val PLATFORM_TEMPORARY_DIRECTORY: Path
   get() {
     val tmpdir = getenv("TMPDIR")
@@ -76,11 +77,12 @@ internal actual fun PosixFileSystem.variantDelete(path: Path, mustExist: Boolean
   }
 }
 
-@OptIn(UnsafeNumber::class)
+@OptIn(UnsafeNumber::class, kotlinx.cinterop.ExperimentalForeignApi::class)
 internal actual fun PosixFileSystem.variantMkdir(dir: Path): Int {
   return mkdir(dir.toString(), 0b111111111u.convert() /* octal 777 */)
 }
 
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 internal actual fun PosixFileSystem.variantCanonicalize(path: Path): Path {
   // Note that realpath() fails if the file doesn't exist.
   val fullpath = realpath(path.toString(), null)
@@ -102,18 +104,21 @@ internal actual fun PosixFileSystem.variantMove(
   }
 }
 
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 internal actual fun PosixFileSystem.variantSource(file: Path): Source {
   val openFile: CPointer<FILE> = fopen(file.toString(), "r")
     ?: throw errnoToIOException(errno)
   return FileSource(openFile)
 }
 
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 internal actual fun PosixFileSystem.variantSink(file: Path, mustCreate: Boolean): Sink {
   val openFile: CPointer<FILE> = fopen(file.toString(), if (mustCreate) "wx" else "w")
     ?: throw errnoToIOException(errno)
   return FileSink(openFile)
 }
 
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 internal actual fun PosixFileSystem.variantAppendingSink(file: Path, mustExist: Boolean): Sink {
   // There is a `r+` flag which we could have used to force existence of [file] but this flag
   // doesn't allow opening for appending, and we don't currently have a way to move the cursor to
@@ -124,12 +129,14 @@ internal actual fun PosixFileSystem.variantAppendingSink(file: Path, mustExist: 
   return FileSink(openFile)
 }
 
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 internal actual fun PosixFileSystem.variantOpenReadOnly(file: Path): FileHandle {
   val openFile: CPointer<FILE> = fopen(file.toString(), "r")
     ?: throw errnoToIOException(errno)
   return UnixFileHandle(false, openFile)
 }
 
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 internal actual fun PosixFileSystem.variantOpenReadWrite(
   file: Path,
   mustCreate: Boolean,
@@ -170,7 +177,7 @@ internal actual fun PosixFileSystem.variantCreateSymlink(source: Path, target: P
   }
 }
 
-@OptIn(UnsafeNumber::class)
+@OptIn(UnsafeNumber::class, kotlinx.cinterop.ExperimentalForeignApi::class)
 internal fun variantPread(
   file: CPointer<FILE>,
   target: CValuesRef<*>,
@@ -178,7 +185,7 @@ internal fun variantPread(
   offset: Long,
 ): Int = pread(fileno(file), target, byteCount.convert(), offset).convert()
 
-@OptIn(UnsafeNumber::class)
+@OptIn(UnsafeNumber::class, kotlinx.cinterop.ExperimentalForeignApi::class)
 internal fun variantPwrite(
   file: CPointer<FILE>,
   source: CValuesRef<*>,
@@ -186,11 +193,11 @@ internal fun variantPwrite(
   offset: Long,
 ): Int = pwrite(fileno(file), source, byteCount.convert(), offset).convert()
 
-@OptIn(UnsafeNumber::class)
+@OptIn(UnsafeNumber::class, kotlinx.cinterop.ExperimentalForeignApi::class)
 internal val timespec.epochMillis: Long
   get() = tv_sec * 1000L + tv_sec / 1_000_000L
 
-@OptIn(UnsafeNumber::class)
+@OptIn(UnsafeNumber::class, kotlinx.cinterop.ExperimentalForeignApi::class)
 internal fun symlinkTarget(stat: stat, path: Path): Path? {
   if (stat.st_mode.toInt() and S_IFMT != S_IFLNK) return null
 

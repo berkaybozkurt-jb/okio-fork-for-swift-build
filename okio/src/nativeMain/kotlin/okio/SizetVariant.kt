@@ -24,14 +24,14 @@ import platform.posix.FILE
 import platform.posix.fread
 import platform.posix.fwrite
 
-@OptIn(UnsafeNumber::class)
+@OptIn(UnsafeNumber::class, kotlinx.cinterop.ExperimentalForeignApi::class)
 internal fun variantFread(
   target: CPointer<ByteVarOf<Byte>>,
   byteCount: UInt,
   file: CPointer<FILE>,
 ): UInt = fread(target, 1u, byteCount.convert(), file).convert()
 
-@OptIn(UnsafeNumber::class)
+@OptIn(UnsafeNumber::class, kotlinx.cinterop.ExperimentalForeignApi::class)
 internal fun variantFwrite(
   source: CPointer<ByteVar>,
   byteCount: UInt,

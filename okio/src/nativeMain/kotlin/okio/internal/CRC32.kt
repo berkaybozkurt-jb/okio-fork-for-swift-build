@@ -22,9 +22,10 @@ import kotlinx.cinterop.usePinned
 import platform.zlib.crc32
 import platform.zlib.uBytefVar
 
-@OptIn(UnsafeNumber::class)
+@OptIn(UnsafeNumber::class, kotlinx.cinterop.ExperimentalForeignApi::class)
 actual class CRC32 {
   private var crc = crc32(0u, null, 0u)
+
 
   actual fun update(content: ByteArray, offset: Int, byteCount: Int) {
     content.usePinned {

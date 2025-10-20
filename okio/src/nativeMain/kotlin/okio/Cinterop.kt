@@ -26,10 +26,12 @@ import platform.posix.ENOENT
 import platform.posix.strerror
 
 /** Copy [count] bytes from the memory at this pointer into a [ByteString]. */
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 fun COpaquePointer.readByteString(count: Int): ByteString {
   return if (count == 0) EMPTY else ByteString(readBytes(count))
 }
 
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 internal fun Buffer.writeNullTerminated(bytes: CPointer<ByteVarOf<Byte>>): Buffer = apply {
   var pos = 0
   while (true) {
@@ -42,7 +44,7 @@ internal fun Buffer.writeNullTerminated(bytes: CPointer<ByteVarOf<Byte>>): Buffe
   }
 }
 
-internal fun Buffer.write(
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)internal fun Buffer.write(
   source: CPointer<ByteVarOf<Byte>>,
   offset: Int = 0,
   byteCount: Int,
@@ -52,6 +54,7 @@ internal fun Buffer.write(
   }
 }
 
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 internal fun Buffer.read(
   sink: CPointer<ByteVarOf<Byte>>,
   offset: Int = 0,
@@ -62,6 +65,7 @@ internal fun Buffer.read(
   }
 }
 
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 internal fun errnoToIOException(errno: Int): IOException {
   val message = strerror(errno)
   val messageString = if (message != null) {

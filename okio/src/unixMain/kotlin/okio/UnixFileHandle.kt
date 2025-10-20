@@ -30,6 +30,7 @@ import platform.posix.fstat
 import platform.posix.ftruncate
 import platform.posix.stat
 
+@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 internal class UnixFileHandle(
   readWrite: Boolean,
   private val file: CPointer<FILE>,

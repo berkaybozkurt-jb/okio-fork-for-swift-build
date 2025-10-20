@@ -21,7 +21,7 @@ import okio.processUtf16Chars
 import okio.processUtf8Bytes
 
 // TODO For benchmarking, these methods need to be available but preferably invisible
-// to everything else. Putting them in this file, `-Utf8.kt`, makes them invisible to
+// to everything else. Putting them in this file, `-Utf8Internal.kt`, makes them invisible to
 // Java but still visible to Kotlin.
 
 fun ByteArray.commonToUtf8String(beginIndex: Int = 0, endIndex: Int = size): String {
