@@ -261,19 +261,19 @@ data class RemoteSPM(val url: String, val exact: String, val productName : Strin
 // If you map by Maven coordinate, use "group:name" to avoid ambiguity:
 val kmpToSpm: Map<String, RemoteSPM> = mapOf(
   "com.squareup.okio:okio" to RemoteSPM(
-    url = "https://github.com/<org>/<spm-repo-with-Package.swift>",
-    exact = "3.10.2", // ensure this matches an actual Git tag in the SPM repo,
-    productName = "Okio",
-    productPackage = "Okio",
+    url = "https://github.com/berkaybozkurt-jb/okio-fork-for-swift-build",
+    exact = "1.0.1", // ensure this matches an actual Git tag in the SPM repo,
+    productName = "okio",
+    productPackage = "okio-fork-for-swift-build",
   )
 )
 
 fun RemoteSPM.toAnnotation() : String {
-  return ".package(url : \"${url}\", exact : \"${exact}\"), "
+  return ".package(url : \"${url}\", exact : \"${exact}\")"
 }
 
 fun RemoteSPM.asDepAnnotation() : String {
-  return ".product(name : \"${url}\", package : \"${exact}\"), "
+  return ".product(name : \"${productName}\", package : \"${productPackage}\")"
 }
 
 
@@ -281,7 +281,6 @@ fun RemoteSPM.asDepAnnotation() : String {
 val PKG_PLACEHOLDER = "__PACKAGE_DIR__"
 
 data class ModuleCoord(val group: String, val name: String, val version: String)
-data class RemoteNode(val coord: ModuleCoord, val targetName: String, val files: List<File>)
 data class ProjNode(val proj: Project, val targetName: String)
 
 
@@ -369,7 +368,7 @@ fun directExternalModulesForSets(p: Project, setNames: Set<String>): Set<ModuleC
         val g = dep.group
         val n = dep.name
         val v = dep.version
-        if (!g.isNullOrBlank() && n.isNotBlank() && !v.isNullOrBlank()) {
+        if (g.isNotBlank() && n.isNotBlank() && !v.isNullOrBlank()) {
           acc += ModuleCoord(g, n, v)
         }
       }
@@ -384,36 +383,6 @@ fun directExternalModulesForSets(p: Project, setNames: Set<String>): Set<ModuleC
   collectFrom("implementation", out)
   collectFrom("api", out)
 
-  return out
-}
-
-fun resolveSourcesJar(host: Project, coord: ModuleCoord): File? {
-  val notation = "${coord.group}:${coord.name}:${coord.version}:sources@jar"
-  val dep = host.dependencies.create(notation)
-  val dc = host.configurations.detachedConfiguration(dep).apply { isTransitive = false }
-  val files = try { dc.resolve() } catch (_: Exception) { emptySet<File>() }
-  return files.firstOrNull()?.takeIf { it.isFile && it.extension == "jar" }
-}
-
-fun extractKotlinSources(jar: File, destDir: File): List<File> {
-  val out = mutableListOf<File>()
-  destDir.mkdirs()
-  ZipInputStream(jar.inputStream().buffered()).use { zis ->
-    while (true) {
-      val e = zis.nextEntry ?: break
-      if (e.isDirectory) {
-        File(destDir, e.name).mkdirs()
-      } else {
-        if (e.name.endsWith(".kt") || e.name.endsWith(".kts")) {
-          val tgt = File(destDir, e.name)
-          tgt.parentFile?.mkdirs()
-          tgt.outputStream().use { os -> zis.copyTo(os) }
-          out += tgt
-        }
-      }
-      zis.closeEntry()
-    }
-  }
   return out
 }
 
@@ -436,31 +405,7 @@ fun collectProjectDepGraph(graph: LinkedHashMap<Project, Set<Project>>, host: Pr
   }
 }
 
-/** Create or reuse a remote SPM target by vendoring sources; returns the target's name. */
-fun ensureRemoteTarget(
-  host: Project,
-  coord: ModuleCoord,
-  vendorRoot: File,
-  pkgRoot: File,
-  remoteTargets: MutableMap<ModuleCoord, RemoteNode>
-): RemoteNode? {
-  remoteTargets[coord]?.let { return it }
-  val jar = resolveSourcesJar(host, coord) ?: run {
-    println("No sources JAR for ${coord.group}:${coord.name}:${coord.version}; skipping")
-    return null
-  }
-  val extractDir = File(vendorRoot, "${coord.group}.${coord.name}/${coord.version}")
-  val extracted = extractKotlinSources(jar, extractDir)
-  if (extracted.isEmpty()) {
-    println("Sources JAR had no Kotlin files for ${coord.group}:${coord.name}:${coord.version}; skipping")
-    return null
-  }
-  val spmTarget = "${coord.group}_${coord.name}_v${coord.version.replace('.', '_')}".spmSafe()
-  createSPMStructure(pkgRoot, spmTarget, mapOf("commonMain" to extracted))
-  val node = RemoteNode(coord, spmTarget, extracted)
-  remoteTargets[coord] = node
-  return node
-}
+
 
 
 /** Make a path relative to pkgRoot (fallback to absolute if relativize fails). */
@@ -550,10 +495,6 @@ private fun buildKonanFragmentArgsUsingLinks(
   return args
 }
 
-/* Swift array serializer */
-private fun swiftStringArray(items: List<String>): String =
-  items.joinToString(", ") { "\"${it.replace("\"", "\\\"")}\"" }
-
 /* -------------------- Task -------------------- */
 
 tasks.register("convertThisProjectToSwiftPMBuild") {
@@ -598,11 +539,9 @@ tasks.register("convertThisProjectToSwiftPMBuild") {
 
     // For each project node, collect its external modules (direct only)
     val allProjects = listOf(project) + depGraph.keys.toList()
-    println("All Projects are ${allProjects}")
     val externalsByProject: Map<Project, Set<ModuleCoord>> =
       allProjects.associateWith { p -> directExternalModulesForSets(p, setNamesForDeps) }
 
-    println("ExternalsByProject: $externalsByProject")
     val remoteTargets = mutableMapOf<ModuleCoord, RemoteSPM>()
     val projectNodes = mutableMapOf<Project, ProjNode>()
 
@@ -629,12 +568,6 @@ tasks.register("convertThisProjectToSwiftPMBuild") {
         kmpToSpm[key.name()] ?: error("Missing SPM mapping for ${key.name()}")
       }
     }
-
-    println("RemoteTargets: $remoteTargets")
-
-    println("Externals ${externalsByProject}")
-
-
     /* --------- Build per-target OTHER_CFLAGS payloads from SPM links --------- */
 
     val perProjCOtherFlags: Map<Project, List<String>> =
@@ -656,7 +589,7 @@ tasks.register("convertThisProjectToSwiftPMBuild") {
       val targetNames = projectNodes.values.joinToString(", ") { "\"${it.targetName}\"" }
       appendLine("        .library(name: \"$moduleName\", targets: [${targetNames}]),")
       appendLine("    ],")
-      val remoteDeps = remoteTargets.values.map{ it.toAnnotation() }.joinToString { ",\n$it" }
+      val remoteDeps = remoteTargets.values.joinToString(", ") { it.toAnnotation() }
       appendLine(" dependencies: [ $remoteDeps ],")
       appendLine("    targets: [")
 
@@ -667,9 +600,9 @@ tasks.register("convertThisProjectToSwiftPMBuild") {
           .mapNotNull { remoteTargets[it]?.asDepAnnotation() }
           .sorted()
         val projDirectProjDeps = depGraph[pn.proj].orEmpty()
-          .mapNotNull { d -> projectNodes[d]?.targetName }
-          .sorted()
+          .map { d -> "\"${projectNodes[d]?.targetName}\"" }                    .sorted()
         val depsForProj = (projDirectProjDeps + projRemoteDeps).sorted()
+
         val flags = perProjCOtherFlags[pn.proj].orEmpty().joinToString(" ")
         val cFlagsLine =
           if (flags.isNotEmpty())
@@ -677,7 +610,7 @@ tasks.register("convertThisProjectToSwiftPMBuild") {
           else ""
         appendLine("        .target(")
         appendLine("            name: \"${pn.targetName}\",")
-        appendLine("            dependencies: [${depsForProj.joinToString(", ") { "\"$it\"" }}],")
+        appendLine("            dependencies: [${depsForProj.joinToString(", ") { it }}],")
         appendLine("            path: \"Sources/${pn.targetName}\"$cFlagsLine")
         appendLine("        )" + if (idx != projList.lastIndex || remoteTargets.isNotEmpty()) "," else "")
       }
@@ -692,3 +625,4 @@ tasks.register("convertThisProjectToSwiftPMBuild") {
     println("NOTE: -Xfragment-sources now points to SPM symlink paths (with .swift).")
   }
 }
+
