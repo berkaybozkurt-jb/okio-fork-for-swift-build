@@ -5,6 +5,9 @@
 .settings
 eclipsebin
 
+.swiftpm
+.swiftpm/*
+
 bin
 gen
 build
