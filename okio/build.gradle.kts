@@ -368,7 +368,7 @@ fun directExternalModulesForSets(p: Project, setNames: Set<String>): Set<ModuleC
         val g = dep.group
         val n = dep.name
         val v = dep.version
-        if (g.isNotBlank() && n.isNotBlank() && !v.isNullOrBlank()) {
+        if (!g.isNullOrBlank() && n.isNotBlank() && !v.isNullOrBlank()) {
           acc += ModuleCoord(g, n, v)
         }
       }
